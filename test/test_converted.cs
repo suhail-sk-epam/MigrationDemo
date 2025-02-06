@@ -15,7 +15,7 @@ namespace TestProject
         public async Task GivenINavigateToTheExamplePage()
         {
             var playwright = await Playwright.CreateAsync();
-            var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = false });
+            var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
             var context = await browser.NewContextAsync();
             _page = await context.NewPageAsync();
             await _page.GotoAsync("https://devexpress.github.io/testcafe/example/");
