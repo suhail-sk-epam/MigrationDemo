@@ -2,6 +2,66 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FluentAssertions;
 using TechTalk.SpecFlow;
 using Microsoft.Playwright;
+
+namespace TestProject.StepDefinitions
+{
+    [Binding]
+    public class TestSteps
+    {
+        private IPage _page;
+
+        public TestSteps()
+        {
+            var playwright = Playwright.CreateAsync().Result;
+            var browser = playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = false }).Result;
+            _page = browser.NewPageAsync().Result;
+            _page.GotoAsync("https://devexpress.github.io/testcafe/example/").Wait();
+        }
+
+        [Given(@"I type the name '([^']*)' in the input field")]
+        public void GivenITypeTheNameInTheInputField(string name)
+        {
+            _page.FillAsync("#developer-name", name).Wait();
+        }
+
+        [Then(@"the input field should contain '([^']*)'")]
+        public void ThenTheInputFieldShouldContain(string expectedName)
+        {
+            var actualName = _page.InputValueAsync("#developer-name").Result;
+            actualName.Should().Be(expectedName);
+        }
+
+        [When(@"I click the populate button")]
+        public void WhenIClickThePopulateButton()
+        {
+            _page.ClickAsync("#populate").Wait();
+        }
+
+        [Then(@"a confirmation dialog should appear with text '([^']*)'")]
+        public void ThenAConfirmationDialogShouldAppearWithText(string expectedText)
+        {
+            var dialog = _page.WaitForEventAsync(PageEvent.Dialog).Result;
+            dialog.Message.Should().Be(expectedText);
+            dialog.AcceptAsync().Wait();
+        }
+
+        [When(@"I submit the form")]
+        public void WhenISubmitTheForm()
+        {
+            _page.ClickAsync("#submit-button").Wait();
+        }
+
+        [Then(@"the result should contain '([^']*)'")]
+        public void ThenTheResultShouldContain(string expectedResult)
+        {
+            var result = _page.InnerTextAsync("#article-header").Result;
+            result.Should().Contain(expectedResult);
+        }
+    }
+}
+using FluentAssertions;
+using TechTalk.SpecFlow;
+using Microsoft.Playwright;
 using System.Threading.Tasks;
 
 namespace TestProject
