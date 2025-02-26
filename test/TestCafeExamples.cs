@@ -4,6 +4,164 @@ using FluentAssertions;
 using TechTalk.SpecFlow;
 using System.Threading.Tasks;
 
+namespace PlaywrightTests
+{
+    [Binding]
+    public class TestCafeExamplesSteps
+    {
+        private IPage _page;
+        private IBrowser _browser;
+        private IPlaywright _playwright;
+
+        [BeforeScenario]
+        public async Task BeforeScenario()
+        {
+            _playwright = await Playwright.CreateAsync();
+            _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
+            {
+                Headless = false
+            });
+            _page = await _browser.NewPageAsync();
+            await _page.GotoAsync("https://devexpress.github.io/testcafe/example/");
+        }
+
+        [AfterScenario]
+        public async Task AfterScenario()
+        {
+            await _browser.CloseAsync();
+            _playwright.Dispose();
+        }
+
+        [Given(@"I am on the TestCafe example page")]
+        public async Task GivenIAmOnTheTestCafeExamplePage()
+        {
+            var title = await _page.TitleAsync();
+            title.Should().Contain("TestCafe Example Page");
+        }
+
+        [When(@"I type '(.*)' into the name input")]
+        public async Task WhenITypeIntoTheNameInput(string name)
+        {
+            await _page.FillAsync("#developer-name", name);
+        }
+
+        [Then(@"the name input should contain '(.*)'")]
+        public async Task ThenTheNameInputShouldContain(string expectedName)
+        {
+            var actualName = await _page.InputValueAsync("#developer-name");
+            actualName.Should().Be(expectedName);
+        }
+
+        [When(@"I click on all feature checkboxes")]
+        public async Task WhenIClickOnAllFeatureCheckboxes()
+        {
+            var checkboxes = await _page.QuerySelectorAllAsync(".feature-label");
+            foreach (var checkbox in checkboxes)
+            {
+                await checkbox.ClickAsync();
+            }
+        }
+
+        [Then(@"all feature checkboxes should be checked")]
+        public async Task ThenAllFeatureCheckboxesShouldBeChecked()
+        {
+            var checkboxes = await _page.QuerySelectorAllAsync(".feature-label input");
+            foreach (var checkbox in checkboxes)
+            {
+                var isChecked = await checkbox.IsCheckedAsync();
+                isChecked.Should().BeTrue();
+            }
+        }
+
+        [When(@"I move the slider to '(.*)'")]
+        public async Task WhenIMoveTheSliderTo(string value)
+        {
+            await _page.FillAsync("#tried-test-cafe", "true");
+            await _page.FillAsync("#slider", value);
+        }
+
+        [Then(@"the slider value should be greater than the initial value")]
+        public async Task ThenTheSliderValueShouldBeGreaterThanTheInitialValue()
+        {
+            var sliderValue = await _page.InputValueAsync("#slider");
+            int.Parse(sliderValue).Should().BeGreaterThan(0);
+        }
+
+        [When(@"I select text in the name input from position (.*) to (.*)")]
+        public async Task WhenISelectTextInTheNameInputFromPositionTo(int start, int end)
+        {
+            await _page.FocusAsync("#developer-name");
+            await _page.EvaluateAsync($"el => el.setSelectionRange({start}, {end})", await _page.QuerySelectorAsync("#developer-name"));
+        }
+
+        [When(@"I press the delete key")]
+        public async Task WhenIPressTheDeleteKey()
+        {
+            await _page.PressAsync("#developer-name", "Delete");
+        }
+
+        [When(@"I click the Populate button")]
+        public async Task WhenIClickThePopulateButton()
+        {
+            _page.Dialog += (_, dialog) => dialog.AcceptAsync();
+            await _page.ClickAsync("#populate");
+        }
+
+        [Then(@"a dialog with the text '(.*)' should appear")]
+        public async Task ThenADialogWithTheTextShouldAppear(string expectedText)
+        {
+            var dialogText = await _page.EvaluateAsync<string>("() => window.dialogText");
+            dialogText.Should().Be(expectedText);
+        }
+
+        [When(@"I select '(.*)' from the interface select")]
+        public async Task WhenISelectFromTheInterfaceSelect(string option)
+        {
+            await _page.SelectOptionAsync("#preferred-interface", option);
+        }
+
+        [Then(@"the selected interface option should be '(.*)'")]
+        public async Task ThenTheSelectedInterfaceOptionShouldBe(string expectedOption)
+        {
+            var selectedOption = await _page.EvaluateAsync<string>("() => document.querySelector('#preferred-interface').value");
+            selectedOption.Should().Be(expectedOption);
+        }
+
+        [When(@"I fill out the form with the following details:")]
+        public async Task WhenIFillOutTheFormWithTheFollowingDetails(Table table)
+        {
+            var formData = table.CreateInstance<FormData>();
+            await _page.FillAsync("#developer-name", formData.Name);
+            await _page.ClickAsync($"#macos");
+            if (formData.TriedTestCafe)
+            {
+                await _page.ClickAsync("#tried-test-cafe");
+            }
+            await _page.FillAsync("#comments", formData.Comments);
+        }
+
+        [When(@"I submit the form")]
+        public async Task WhenISubmitTheForm()
+        {
+            await _page.ClickAsync("#submit-button");
+        }
+
+        [Then(@"the result should contain '(.*)'")]
+        public async Task ThenTheResultShouldContain(string expectedText)
+        {
+            var resultText = await _page.InnerTextAsync("#article-header");
+            resultText.Should().Contain(expectedText);
+        }
+    }
+
+    public class FormData
+    {
+        public string Name { get; set; }
+        public bool TriedTestCafe { get; set; }
+        public string Comments { get; set; }
+    }
+}
+
 namespace TestCafeExamples
 {
     [Binding]
